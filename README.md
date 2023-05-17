@@ -1,0 +1,1 @@
+# A Slack bot created using Go!
