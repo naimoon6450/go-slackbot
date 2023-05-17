@@ -1,6 +1,7 @@
 package slackclient
 
 import (
+	"github.com/naimoon6450/go-slackbot/config"
 	"github.com/slack-go/slack"
 )
 
@@ -10,5 +11,7 @@ type Client struct {
 
 func NewClient(cfg config.Config) *Client {
 	client := slack.New("token")
-	return &Client{}
+	return &Client{
+		Client: client,
+	}
 }
