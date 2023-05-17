@@ -9,7 +9,7 @@ type Client struct {
 	*slack.Client
 }
 
-func NewClient(cfg config.Config) *Client {
+func New(cfg config.Config) *Client {
 	client := slack.New("token")
 	return &Client{
 		Client: client,
