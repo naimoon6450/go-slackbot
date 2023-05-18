@@ -5,7 +5,9 @@ import (
 	"log"
 
 	"github.com/naimoon6450/go-slackbot/config"
+	"github.com/naimoon6450/go-slackbot/githubclient"
 	"github.com/naimoon6450/go-slackbot/slackclient"
+	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
 	"github.com/slack-go/slack/socketmode"
 )
@@ -17,12 +19,14 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	go socketListener(ctx, sc, &sc.SocketClient)
+	ghc := githubclient.New(ctx, cfg.Github)
+
+	go socketListener(ctx, sc, &sc.SocketClient, ghc)
 
 	sc.SocketClient.Run()
 }
 
-func socketListener(ctx context.Context, client *slackclient.Client, sc *slackclient.SocketClient) {
+func socketListener(ctx context.Context, client *slackclient.Client, sc *slackclient.SocketClient, ghc *githubclient.Client) {
 	// We'll be listening for events on the socket and blocking until we get an event
 	for {
 		select {
@@ -45,7 +49,21 @@ func socketListener(ctx context.Context, client *slackclient.Client, sc *slackcl
 				if err != nil {
 					log.Fatal(err)
 				}
+			case socketmode.EventTypeSlashCommand:
+				cmd, ok := event.Data.(slack.SlashCommand)
+				if !ok {
+					log.Printf("Ignored %+v\n", event)
+					continue
+				}
+
+				sc.Ack(*event.Request)
+
+				err := slackclient.HandleSlashCommand(ctx, cmd, client, ghc)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
+
 		}
 	}
 }
