@@ -21,12 +21,24 @@ func HandleSlashCommand(ctx context.Context, cmd slack.SlashCommand, client *Cli
 }
 
 func handlePullsCmd(ctx context.Context, cmd slack.SlashCommand, client *Client, ghc *githubclient.Client) error {
-
-	daysAgo := time.Now().AddDate(0, 0, -7).Format("2006-01-02")
-	text := slack.TextBlockObject{
-		Type: "mrkdwn",
+	prListStr, err := buildPRMessage(ctx, ghc)
+	if err != nil {
+		return err
 	}
 
+	_, resp, err := client.PostMessage(cmd.ChannelID, slack.MsgOptionText(prListStr, false))
+
+	if err != nil {
+		return err
+	}
+
+	log.Println(resp)
+
+	return nil
+}
+
+func buildPRMessage(ctx context.Context, ghc *githubclient.Client) (string, error) {
+	daysAgo := time.Now().AddDate(0, 0, -7).Format("2006-01-02")
 	prListStr := "*[Open Growth PRs]*\n\n"
 	for _, member := range ghc.GrowthMembers {
 		opts := &github.SearchOptions{
@@ -35,7 +47,7 @@ func handlePullsCmd(ctx context.Context, cmd slack.SlashCommand, client *Client,
 		query := fmt.Sprintf("is:pr is:open draft:false org:%s author:%s created:>%s", "UseFedora", member, daysAgo)
 		prs, _, err := ghc.Search.Issues(ctx, query, opts)
 		if err != nil {
-			log.Fatal(err)
+			return "", err
 		}
 
 		if len(prs.Issues) == 0 {
@@ -52,15 +64,5 @@ func handlePullsCmd(ctx context.Context, cmd slack.SlashCommand, client *Client,
 		prListStr += memberPRStr
 	}
 
-	text.Text = prListStr
-
-	_, resp, err := client.PostMessage(cmd.ChannelID, slack.MsgOptionText(prListStr, false))
-
-	if err != nil {
-		return err
-	}
-
-	log.Println(resp)
-
-	return nil
+	return prListStr, nil
 }
