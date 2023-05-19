@@ -22,10 +22,11 @@ func main() {
 
 	c := cron.New()
 
+	// This will fire every day at 9am and 4pm
 	// c.AddFunc("0 0 9,16 * * *", func() { slackclient.BuildPRMessage(ctx, ghc) })
 	c.AddFunc("*/1 * * * *", func() {
 		log.Println("Firing post to slack")
-		slackclient.HelperSlackPost(ctx, sc, ghc, "SOMECHANNEL")
+		slackclient.HelperSlackPost(ctx, sc, ghc, cfg.Slack.ChannelID)
 	})
 
 	log.Println("Starting cron")
