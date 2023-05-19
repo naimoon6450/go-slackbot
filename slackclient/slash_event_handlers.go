@@ -21,7 +21,7 @@ func HandleSlashCommand(ctx context.Context, cmd slack.SlashCommand, client *Cli
 }
 
 func handlePullsCmd(ctx context.Context, cmd slack.SlashCommand, client *Client, ghc *githubclient.Client) error {
-	prListStr, err := buildPRMessage(ctx, ghc)
+	prListStr, err := BuildPRMessage(ctx, ghc)
 	if err != nil {
 		return err
 	}
@@ -37,7 +37,26 @@ func handlePullsCmd(ctx context.Context, cmd slack.SlashCommand, client *Client,
 	return nil
 }
 
-func buildPRMessage(ctx context.Context, ghc *githubclient.Client) (string, error) {
+func HelperSlackPost(ctx context.Context, client *Client, ghc *githubclient.Client, channelID string) error {
+	prListStr, err := BuildPRMessage(ctx, ghc)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	_, resp, err := client.PostMessage(channelID, slack.MsgOptionText(prListStr, false))
+
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+
+	log.Println(resp)
+
+	return nil
+}
+
+func BuildPRMessage(ctx context.Context, ghc *githubclient.Client) (string, error) {
 	daysAgo := time.Now().AddDate(0, 0, -7).Format("2006-01-02")
 	prListStr := "*[Open Growth PRs]*\n\n"
 	for _, member := range ghc.GrowthMembers {

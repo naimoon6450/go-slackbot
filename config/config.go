@@ -2,6 +2,8 @@ package config
 
 import (
 	"os"
+	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -26,7 +28,7 @@ type Github struct {
 }
 
 func New() Config {
-	godotenv.Load()
+	godotenv.Load(filepath.Join(getBasePath(), ".env"))
 
 	growthMemStr := os.Getenv("GROWTH_MEMBERS")
 	growthMembers := strings.Split(growthMemStr, ",")
@@ -45,4 +47,9 @@ func New() Config {
 			GrowthTeamID:  growthTeamIDToInt,
 		},
 	}
+}
+
+func getBasePath() string {
+	_, b, _, _ := runtime.Caller(0)
+	return filepath.Join(filepath.Dir(b), "..")
 }
